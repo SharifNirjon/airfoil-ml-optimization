@@ -35,7 +35,7 @@ def main():
     
     # Load data
     print("\n1️⃣ Loading XFoil Data...")
-    X, y = load_xfoil_data('data/xfoil_datasets/')
+    X, y = load_xfoil_data(r'D:\NAME 400\dipta\airfoil-ml-optimization\data')
     
     # Initialize neural network comparison
     print("\n2️⃣ Initializing Neural Network Architectures...")
