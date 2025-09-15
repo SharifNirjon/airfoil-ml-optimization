@@ -33,14 +33,12 @@ def main():
     os.makedirs('models/saved_models', exist_ok=True)
     os.makedirs('logs/tensorboard', exist_ok=True)
     
-    # Load data
+    # Load data - FIX: Handle tuple return from load_xfoil_data
     print("\n1️⃣ Loading XFoil Data...")
     from data_preprocessing import XFoilDataProcessor
     processor = XFoilDataProcessor()
-    data = processor.load_xfoil_data(r'D:\NAME 400\dipta\airfoil-ml-optimization\data')
-    # Extract features and target from the processed data
-    X = data[processor.feature_names]
-    y = data['lift_to_drag_ratio']
+    X, y = processor.load_xfoil_data(r'D:\NAME 400\dipta\airfoil-ml-optimization\data')
+    
     # Initialize neural network comparison
     print("\n2️⃣ Initializing Neural Network Architectures...")
     nn_comp = AirfoilNeuralNetworks()
