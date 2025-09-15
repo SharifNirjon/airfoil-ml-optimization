@@ -1,7 +1,6 @@
 """
-Airfoil ML Prediction Plots Generator
-Using 8 Specific Algorithms: Linear Regression, Decision Tree, Random Forest, 
-AdaBoost, Gradient Boosting, XGBoost, LightGBM, CatBoost
+Individual Prediction Plots Generator for Airfoil ML Optimization
+Creates separate prediction plots for each algorithm
 """
 
 import pandas as pd
@@ -22,7 +21,7 @@ import glob
 import warnings
 warnings.filterwarnings('ignore')
 
-class AirfoilMLPredictor:
+class IndividualAirfoilMLPredictor:
     def __init__(self, data_path=r"D:\NAME 400\dipta\airfoil-ml-optimization\data"):
         """
         Initialize with your specific data path and 8 algorithms
@@ -42,6 +41,11 @@ class AirfoilMLPredictor:
         self.trained_models = {}
         self.predictions = {}
         self.metrics = {}
+        
+        # Create output directory for individual plots
+        self.output_dir = "individual_prediction_plots"
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
         
     def load_xfoil_data(self):
         """
@@ -200,244 +204,130 @@ class AirfoilMLPredictor:
                 
         print("🎉 All models trained successfully!")
         
-    def plot_individual_predictions(self, figsize=(20, 10)):
+    def plot_individual_predictions_separate(self, figsize=(10, 8), dpi=300):
         """
-        Create individual prediction plots for each algorithm in 2x4 grid
+        Create individual prediction plots for each algorithm as separate images
         """
-        print("📊 Generating individual prediction plots...")
+        print(f"📊 Generating individual prediction plots in separate files...")
+        print(f"💾 Saving plots to: {self.output_dir}/")
         
-        fig, axes = plt.subplots(2, 4, figsize=figsize)
-        axes = axes.ravel()
+        # Define colors for each algorithm (distinct and professional)
+        algorithm_colors = {
+            'Linear Regression': '#FF6B6B',      # Red
+            'Decision Tree': '#4ECDC4',          # Teal
+            'Random Forest': '#45B7D1',          # Blue
+            'AdaBoost': '#96CEB4',               # Green
+            'Gradient Boosting': '#FECA57',      # Yellow
+            'XGBoost': '#FF9FF3',                # Pink
+            'LightGBM': '#54A0FF',               # Light Blue
+            'CatBoost': '#5F27CD'                # Purple
+        }
         
-        # Define colors for each algorithm
-        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f']
-        
-        for idx, (name, y_pred) in enumerate(self.predictions.items()):
-            ax = axes[idx]
+        for name, y_pred in self.predictions.items():
+            # Create individual figure for each algorithm
+            plt.figure(figsize=figsize, dpi=dpi)
             
             # Scatter plot of actual vs predicted
-            ax.scatter(self.y_test, y_pred, alpha=0.6, s=40, color=colors[idx], edgecolors='black', linewidth=0.5)
+            plt.scatter(self.y_test, y_pred, alpha=0.7, s=60, 
+                       color=algorithm_colors[name], edgecolors='black', 
+                       linewidth=0.5, label=f'{name} Predictions')
             
             # Perfect prediction line
             min_val = min(min(self.y_test), min(y_pred))
             max_val = max(max(self.y_test), max(y_pred))
-            ax.plot([min_val, max_val], [min_val, max_val], 'r--', linewidth=2, alpha=0.8)
+            plt.plot([min_val, max_val], [min_val, max_val], 'r--', 
+                    linewidth=3, alpha=0.8, label='Perfect Prediction')
             
             # Labels and title
-            ax.set_xlabel('Actual Values', fontsize=11)
-            ax.set_ylabel('Predicted Values', fontsize=11)
-            ax.set_title(f'{name}\nR² = {self.metrics[name]["R2"]:.4f}', fontsize=12, pad=15)
-            ax.grid(True, alpha=0.3)
+            plt.xlabel('Actual L/D Ratio', fontsize=14, fontweight='bold')
+            plt.ylabel('Predicted L/D Ratio', fontsize=14, fontweight='bold')
+            plt.title(f'{name}\nPrediction Performance', fontsize=16, fontweight='bold', pad=20)
+            plt.grid(True, alpha=0.3)
             
             # Add metrics text box
             correlation = np.corrcoef(self.y_test, y_pred)[0, 1]
-            metrics_text = f'R²: {self.metrics[name]["R2"]:.4f}\nRMSE: {self.metrics[name]["RMSE"]:.4f}\nCorr: {correlation:.4f}'
-            ax.text(0.05, 0.95, metrics_text, 
-                   transform=ax.transAxes, verticalalignment='top',
-                   bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8),
-                   fontsize=9)
+            metrics_text = (f'R² = {self.metrics[name]["R2"]:.3f}\n'
+                          f'RMSE = {self.metrics[name]["RMSE"]:.2f}\n'
+                          f'Correlation = {correlation:.3f}')
+            
+            plt.text(0.05, 0.95, metrics_text, 
+                    transform=plt.gca().transAxes, verticalalignment='top',
+                    bbox=dict(boxstyle='round,pad=0.5', facecolor='lightblue', alpha=0.8),
+                    fontsize=12, fontweight='bold')
+            
+            # Add legend
+            plt.legend(loc='lower right', fontsize=11)
+            
+            # Improve layout
+            plt.tight_layout()
+            
+            # Save the plot
+            filename = f"{name.replace(' ', '_').lower()}_prediction_plot.png"
+            filepath = os.path.join(self.output_dir, filename)
+            plt.savefig(filepath, dpi=dpi, bbox_inches='tight', facecolor='white')
+            print(f"   ✅ Saved: {filename}")
+            
+            # Show the plot
+            plt.show()
+            
+            # Clear the figure to avoid memory issues
+            plt.close()
+            
+        print(f"\n🎉 All individual plots saved successfully!")
+        print(f"📁 Check the '{self.output_dir}' directory for all prediction plots.")
         
-        plt.tight_layout()
-        plt.suptitle('Airfoil ML Algorithms - Individual Prediction Plots (8 Algorithms)', fontsize=18, y=0.98)
-        plt.show()
-        
-    def plot_combined_predictions(self, figsize=(16, 12)):
+    def create_algorithm_summary_plot(self, figsize=(15, 10), dpi=300):
         """
-        Create a combined plot showing all algorithms
+        Create a summary comparison chart
         """
-        print("📊 Generating combined prediction plot...")
-        
-        plt.figure(figsize=figsize)
-        
-        # Define distinct colors for each algorithm
-        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3', '#54A0FF', '#5F27CD']
-        
-        for idx, (name, y_pred) in enumerate(self.predictions.items()):
-            plt.scatter(self.y_test, y_pred, alpha=0.7, s=50, 
-                       color=colors[idx], label=f'{name} (R²={self.metrics[name]["R2"]:.3f})',
-                       edgecolors='black', linewidth=0.5)
-        
-        # Perfect prediction line
-        min_val = min([min(pred) for pred in self.predictions.values()] + [min(self.y_test)])
-        max_val = max([max(pred) for pred in self.predictions.values()] + [max(self.y_test)])
-        plt.plot([min_val, max_val], [min_val, max_val], 'r--', linewidth=3, 
-                label='Perfect Prediction', alpha=0.8)
-        
-        plt.xlabel('Actual Values', fontsize=14)
-        plt.ylabel('Predicted Values', fontsize=14)
-        plt.title('Combined Prediction Plot - All 8 ML Algorithms\nAirfoil Aerodynamic Performance Prediction', fontsize=16)
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=11)
-        plt.grid(True, alpha=0.3)
-        plt.tight_layout()
-        plt.show()
-        
-    def plot_algorithm_ranking(self, figsize=(14, 8)):
-        """
-        Create algorithm ranking visualization
-        """
-        print("📊 Generating algorithm ranking plot...")
+        print("📊 Creating algorithm summary comparison...")
         
         metrics_df = pd.DataFrame(self.metrics).T
-        ranked_algos = metrics_df.sort_values('R2', ascending=True)  # Ascending for horizontal bar plot
+        ranked_algos = metrics_df.sort_values('R2', ascending=False)
         
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+        plt.figure(figsize=figsize, dpi=dpi)
         
-        # R² Score ranking
-        colors = plt.cm.viridis(np.linspace(0, 1, len(ranked_algos)))
-        bars = ax1.barh(range(len(ranked_algos)), ranked_algos['R2'], color=colors, alpha=0.8)
-        ax1.set_title('Algorithm Ranking by R² Score', fontsize=14, pad=20)
-        ax1.set_xlabel('R² Score', fontsize=12)
-        ax1.set_yticks(range(len(ranked_algos)))
-        ax1.set_yticklabels(ranked_algos.index, fontsize=11)
-        ax1.grid(True, alpha=0.3, axis='x')
+        # Create bar plot
+        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+                 '#FECA57', '#FF9FF3', '#54A0FF', '#5F27CD']
         
-        # Add value labels
-        for i, (bar, value) in enumerate(zip(bars, ranked_algos['R2'])):
-            ax1.text(value + 0.005, bar.get_y() + bar.get_height()/2, 
-                    f'{value:.4f}', va='center', fontsize=10)
+        bars = plt.bar(range(len(ranked_algos)), ranked_algos['R2'], 
+                      color=colors, alpha=0.8, edgecolor='black', linewidth=1.5)
         
-        # RMSE ranking (lower is better, so reverse order)
-        ranked_rmse = metrics_df.sort_values('RMSE', ascending=False)
-        colors_rmse = plt.cm.plasma(np.linspace(0, 1, len(ranked_rmse)))
-        bars2 = ax2.barh(range(len(ranked_rmse)), ranked_rmse['RMSE'], color=colors_rmse, alpha=0.8)
-        ax2.set_title('Algorithm Ranking by RMSE\n(Lower is Better)', fontsize=14, pad=20)
-        ax2.set_xlabel('RMSE', fontsize=12)
-        ax2.set_yticks(range(len(ranked_rmse)))
-        ax2.set_yticklabels(ranked_rmse.index, fontsize=11)
-        ax2.grid(True, alpha=0.3, axis='x')
+        plt.title('Algorithm Performance Comparison - R² Score\nAirfoil ML Optimization', 
+                 fontsize=18, fontweight='bold', pad=20)
+        plt.xlabel('Algorithms', fontsize=14, fontweight='bold')
+        plt.ylabel('R² Score', fontsize=14, fontweight='bold')
+        plt.xticks(range(len(ranked_algos)), ranked_algos.index, 
+                  rotation=45, ha='right', fontsize=12)
+        plt.grid(True, alpha=0.3, axis='y')
+        
+        # Add value labels on bars
+        for bar, value in zip(bars, ranked_algos['R2']):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.005,
+                    f'{value:.3f}', ha='center', va='bottom', 
+                    fontsize=11, fontweight='bold')
         
         plt.tight_layout()
+        
+        # Save summary plot
+        summary_path = os.path.join(self.output_dir, "algorithm_summary_comparison.png")
+        plt.savefig(summary_path, dpi=dpi, bbox_inches='tight', facecolor='white')
         plt.show()
+        plt.close()
         
-    def plot_metrics_comparison(self, figsize=(16, 12)):
-        """
-        Create comprehensive metrics comparison
-        """
-        print("📊 Generating comprehensive metrics comparison...")
-        
-        metrics_df = pd.DataFrame(self.metrics).T
-        
-        fig, axes = plt.subplots(2, 2, figsize=figsize)
-        
-        # Color scheme
-        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3', '#54A0FF', '#5F27CD']
-        
-        # R² Score
-        ax1 = axes[0, 0]
-        bars1 = ax1.bar(range(len(metrics_df)), metrics_df['R2'], color=colors, alpha=0.8)
-        ax1.set_title('R² Score Comparison\n(Higher = Better)', fontsize=13, pad=15)
-        ax1.set_ylabel('R² Score', fontsize=11)
-        ax1.set_xticks(range(len(metrics_df)))
-        ax1.set_xticklabels(metrics_df.index, rotation=45, ha='right', fontsize=10)
-        ax1.grid(True, alpha=0.3, axis='y')
-        
-        # Add value labels
-        for bar, value in zip(bars1, metrics_df['R2']):
-            ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.005,
-                    f'{value:.3f}', ha='center', va='bottom', fontsize=9)
-        
-        # RMSE
-        ax2 = axes[0, 1]
-        bars2 = ax2.bar(range(len(metrics_df)), metrics_df['RMSE'], color=colors, alpha=0.8)
-        ax2.set_title('RMSE Comparison\n(Lower = Better)', fontsize=13, pad=15)
-        ax2.set_ylabel('RMSE', fontsize=11)
-        ax2.set_xticks(range(len(metrics_df)))
-        ax2.set_xticklabels(metrics_df.index, rotation=45, ha='right', fontsize=10)
-        ax2.grid(True, alpha=0.3, axis='y')
-        
-        # MAE
-        ax3 = axes[1, 0]
-        bars3 = ax3.bar(range(len(metrics_df)), metrics_df['MAE'], color=colors, alpha=0.8)
-        ax3.set_title('MAE Comparison\n(Lower = Better)', fontsize=13, pad=15)
-        ax3.set_ylabel('MAE', fontsize=11)
-        ax3.set_xticks(range(len(metrics_df)))
-        ax3.set_xticklabels(metrics_df.index, rotation=45, ha='right', fontsize=10)
-        ax3.grid(True, alpha=0.3, axis='y')
-        
-        # MSE
-        ax4 = axes[1, 1]
-        bars4 = ax4.bar(range(len(metrics_df)), metrics_df['MSE'], color=colors, alpha=0.8)
-        ax4.set_title('MSE Comparison\n(Lower = Better)', fontsize=13, pad=15)
-        ax4.set_ylabel('MSE', fontsize=11)
-        ax4.set_xticks(range(len(metrics_df)))
-        ax4.set_xticklabels(metrics_df.index, rotation=45, ha='right', fontsize=10)
-        ax4.grid(True, alpha=0.3, axis='y')
-        
-        plt.tight_layout()
-        plt.show()
-        
-    def print_detailed_summary(self):
-        """
-        Print comprehensive analysis summary
-        """
-        print("\n" + "="*100)
-        print("🎯 AIRFOIL ML ALGORITHMS - PERFORMANCE ANALYSIS")
-        print("   Linear Regression | Decision Tree | Random Forest | AdaBoost")
-        print("   Gradient Boosting | XGBoost | LightGBM | CatBoost")
-        print("="*100)
-        
-        metrics_df = pd.DataFrame(self.metrics).T
-        metrics_df = metrics_df.round(4)
-        
-        # Sort by R² score (descending)
-        metrics_df_sorted = metrics_df.sort_values('R2', ascending=False)
-        
-        print(f"\n📊 Dataset Information:")
-        print(f"   • Training samples: {len(self.X_train)}")
-        print(f"   • Testing samples: {len(self.X_test)}")
-        print(f"   • Features: {len(self.X.columns)}")
-        print(f"   • Target variable range: {self.y.min():.4f} to {self.y.max():.4f}")
-        
-        print(f"\n📈 Performance Metrics Summary:")
-        print(metrics_df_sorted.to_string())
-        
-        print(f"\n🏆 ALGORITHM RANKINGS:")
-        print("-" * 70)
-        print(f"🥇 Best Overall (R²): {metrics_df_sorted.index[0]} ({metrics_df_sorted.iloc[0]['R2']:.4f})")
-        print(f"🥈 Second Best: {metrics_df_sorted.index[1]} ({metrics_df_sorted.iloc[1]['R2']:.4f})")
-        print(f"🥉 Third Best: {metrics_df_sorted.index[2]} ({metrics_df_sorted.iloc[2]['R2']:.4f})")
-        print(f"🎯 Lowest RMSE: {metrics_df['RMSE'].idxmin()} ({metrics_df.loc[metrics_df['RMSE'].idxmin(), 'RMSE']:.4f})")
-        print(f"📉 Lowest MAE: {metrics_df['MAE'].idxmin()} ({metrics_df.loc[metrics_df['MAE'].idxmin(), 'MAE']:.4f})")
-        
-        # Algorithm categories
-        print(f"\n📊 Algorithm Performance Categories:")
-        excellent = metrics_df_sorted[metrics_df_sorted['R2'] >= 0.9]
-        good = metrics_df_sorted[(metrics_df_sorted['R2'] >= 0.8) & (metrics_df_sorted['R2'] < 0.9)]
-        fair = metrics_df_sorted[(metrics_df_sorted['R2'] >= 0.6) & (metrics_df_sorted['R2'] < 0.8)]
-        poor = metrics_df_sorted[metrics_df_sorted['R2'] < 0.6]
-        
-        if len(excellent) > 0:
-            print(f"   🌟 Excellent (R² ≥ 0.9): {', '.join(excellent.index)}")
-        if len(good) > 0:
-            print(f"   ✅ Good (0.8 ≤ R² < 0.9): {', '.join(good.index)}")
-        if len(fair) > 0:
-            print(f"   ⚠️  Fair (0.6 ≤ R² < 0.8): {', '.join(fair.index)}")
-        if len(poor) > 0:
-            print(f"   ❌ Needs Improvement (R² < 0.6): {', '.join(poor.index)}")
-        
-        # Algorithm insights
-        print(f"\n🔍 Algorithm Insights:")
-        tree_based = ['Decision Tree', 'Random Forest', 'AdaBoost', 'Gradient Boosting', 'XGBoost', 'LightGBM', 'CatBoost']
-        tree_performance = metrics_df_sorted[metrics_df_sorted.index.isin(tree_based)]
-        best_tree = tree_performance.index[0] if len(tree_performance) > 0 else None
-        
-        if best_tree:
-            print(f"   🌳 Best Tree-based Algorithm: {best_tree}")
-        if 'Linear Regression' in metrics_df_sorted.index:
-            lr_rank = list(metrics_df_sorted.index).index('Linear Regression') + 1
-            print(f"   📊 Linear Regression Rank: #{lr_rank} out of 8")
+        print(f"   ✅ Saved: algorithm_summary_comparison.png")
 
 def main():
     """
-    Main function to run the complete airfoil ML analysis
+    Main function to run the individual prediction plots generation
     """
-    print("🚁 AIRFOIL ML ALGORITHMS - PREDICTION ANALYSIS")
-    print("🔬 Using 8 Algorithms: Linear Regression, Decision Tree, Random Forest,")
-    print("   AdaBoost, Gradient Boosting, XGBoost, LightGBM, CatBoost")
+    print("🚁 AIRFOIL ML ALGORITHMS - INDIVIDUAL PREDICTION PLOTS")
+    print("🔬 Generating separate plots for each of 8 algorithms")
     print("=" * 80)
     
-    # Initialize predictor with your data path
-    predictor = AirfoilMLPredictor()
+    # Initialize predictor
+    predictor = IndividualAirfoilMLPredictor()
     
     # Load and preprocess data
     if not predictor.load_xfoil_data():
@@ -451,18 +341,14 @@ def main():
         print("❌ No models were trained successfully.")
         return
     
-    # Generate all visualization plots
-    print("\n📊 Generating comprehensive visualization plots...")
-    predictor.plot_individual_predictions()
-    predictor.plot_combined_predictions()
-    predictor.plot_algorithm_ranking()
-    predictor.plot_metrics_comparison()
+    # Generate individual prediction plots
+    predictor.plot_individual_predictions_separate()
     
-    # Print detailed analysis
-    predictor.print_detailed_summary()
+    # Create summary comparison
+    predictor.create_algorithm_summary_plot()
     
-    print("\n🎉 Analysis complete! All prediction plots have been generated.")
-    print("📁 Check the generated plots to compare algorithm performance.")
+    print("\n🎉 Individual prediction plots generation complete!")
+    print("📁 All plots saved as separate PNG files in 'individual_prediction_plots' directory")
 
 if __name__ == "__main__":
     main()
