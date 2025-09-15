@@ -35,8 +35,12 @@ def main():
     
     # Load data
     print("\n1️⃣ Loading XFoil Data...")
-    X, y = load_xfoil_data(r'D:\NAME 400\dipta\airfoil-ml-optimization\data')
-    
+    from data_preprocessing import XFoilDataProcessor
+    processor = XFoilDataProcessor()
+    data = processor.load_xfoil_data(r'D:\NAME 400\dipta\airfoil-ml-optimization\data')
+    # Extract features and target from the processed data
+    X = data[processor.feature_names]
+    y = data['lift_to_drag_ratio']
     # Initialize neural network comparison
     print("\n2️⃣ Initializing Neural Network Architectures...")
     nn_comp = AirfoilNeuralNetworks()
