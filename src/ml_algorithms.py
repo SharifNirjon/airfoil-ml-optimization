@@ -140,7 +140,7 @@ class AirfoilMLComparison:
         self.results_df.to_csv(filename, index=False)
         print(f"📁 Results saved to {filename}")
 
- if __name__ == "__main__":
+if __name__ == "__main__":
     # Load real XFoil airfoil data
     print("🧪 Testing AirfoilMLComparison with real XFoil data...")
     
@@ -157,4 +157,3 @@ class AirfoilMLComparison:
     
     print("\n📊 Final Results Summary:")
     print(results[['Algorithm', 'R2_Score', 'RMSE', 'Training_Time']].round(4))
- 
