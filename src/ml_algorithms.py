@@ -17,6 +17,7 @@ import lightgbm as lgb
 from catboost import CatBoostRegressor
 import time
 import warnings
+from data_preprocessing import XFoilDataProcessor
 warnings.filterwarnings('ignore')
 
 class AirfoilMLComparison:
@@ -139,21 +140,16 @@ class AirfoilMLComparison:
         self.results_df.to_csv(filename, index=False)
         print(f"📁 Results saved to {filename}")
 
-if __name__ == "__main__":
-    # Example usage with dummy data
-    print("🧪 Testing AirfoilMLComparison with synthetic data...")
+ if __name__ == "__main__":
+    # Load real XFoil airfoil data
+    print("🧪 Testing AirfoilMLComparison with real XFoil data...")
     
-    # Generate synthetic airfoil data
-    np.random.seed(42)
-    n_samples = 1000
-    n_features = 8
+    # Load data using the same method as main.py
+    processor = XFoilDataProcessor()
+    X, y = processor.load_xfoil_data(r'D:\NAME 400\dipta\airfoil-ml-optimization\data')
     
-    # Features: chord_length, thickness, camber, angle_of_attack, reynolds_number, etc.
-    X = np.random.randn(n_samples, n_features)
-    
-    # Target: Lift-to-Drag ratio (synthetic relationship)
-    y = (2 * X[:, 0] - 1.5 * X[:, 1] + 0.8 * X[:, 2] + 
-         np.random.normal(0, 0.1, n_samples))
+    print(f"📊 Loaded real dataset with shape: {X.shape}")
+    print(f"🎯 Target range: {y.min():.3f} to {y.max():.3f}")
     
     # Initialize and run comparison
     ml_comp = AirfoilMLComparison()
@@ -161,3 +157,4 @@ if __name__ == "__main__":
     
     print("\n📊 Final Results Summary:")
     print(results[['Algorithm', 'R2_Score', 'RMSE', 'Training_Time']].round(4))
+ 
